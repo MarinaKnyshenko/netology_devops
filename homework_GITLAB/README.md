@@ -31,6 +31,13 @@ build:
    - docker build .
 
 ```
+Сборка
+
+![build_1](build_1.png)
+
+![build_2](build_2.png)
+
+![build_3](build_3.png)
 
 
 
