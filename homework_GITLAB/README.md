@@ -5,5 +5,9 @@
 
 Создаем и регистрируем runner
 
+!(runner_1.png)
+
+!(runner_2.png)
+
 
 
