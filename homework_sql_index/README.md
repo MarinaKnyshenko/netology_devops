@@ -35,28 +35,35 @@ where date(p.payment_date) = '2005-07-30' and p.payment_date = r.rental_date and
 
 Далее выполним explain analyze.
 
-Длительное время занимает выполнение оконной функции, в которой происходит группировка по столбцам разных таблиц.
+Узкие места могут включать:
+* Использование функции DATE() на p.payment_date, что может препятствовать использованию индексов.
+* Возможное отсутствие индексов на ключевых столбцах для соединений и фильтрации.
+* Вместо использования разделенного запятыми списка таблиц и условий в WHERE попробуем использовать JOIN'ы.
 
 Оптимизируем запрос следующим образом:
-* удалим из функции столбец f.title и саму таблицу film из запроса
-* оконную функцию заменим на group by
+
+* убедимся, что на следующих столбцах есть индексы:
+  * payment.payment_date
+  * rental.rental_date
+  * customer.customer_id
+  * inventory.inventory_id
+  * film.film_id
 * поправим условие where
 * добавим join.
 
 Вот что получилось:
 
 ```
-select distinct concat(c.last_name, ' ', c.first_name), sum(p.amount), c.customer_id
-from payment p
-join rental r on p.payment_date = r.rental_date 
-join customer c on r.customer_id = c.customer_id 
-join inventory i on i.inventory_id = r.inventory_id 
-where  date(p.payment_date) >= '2005-07-30' and date(p.payment_date) < DATE_ADD('2005-07-30', INTERVAL 1 DAY)
-group by c.customer_id;
+SELECT DISTINCT CONCAT(c.last_name, ' ', c.first_name),
+       SUM(p.amount) OVER (PARTITION BY c.customer_id, f.title)
+FROM payment p
+JOIN rental r ON p.payment_date = r.rental_date
+JOIN customer c ON r.customer_id = c.customer_id
+JOIN inventory i ON i.inventory_id = r.inventory_id
+JOIN film f ON f.film_id = i.film_id
+WHERE p.payment_date >= '2005-07-30 00:00:00' AND p.payment_date < '2005-07-31 00:00:00';
 ```
 
-![Задание 22](task2_short1.png)
-
-![Задание 23](task2_short2.png)
+![Задание 22](task_2_short.png)
 
 Запрос стал выполняться быстрее.
